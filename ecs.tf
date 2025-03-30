@@ -19,7 +19,7 @@ resource "aws_ecs_task_definition" "nginx_task" {
   requires_compatibilities = ["EC2"]
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = aws_iam_role.ecs_instance_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([
     {
@@ -171,6 +171,10 @@ resource "aws_ecs_service" "nginx_service" {
   deployment_circuit_breaker {
     enable   = true
     rollback = true
+  }
+
+  timeouts {
+    delete = "30m"
   }
 
   tags = {

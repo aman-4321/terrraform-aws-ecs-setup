@@ -31,7 +31,7 @@ variable "instance_type" {
 variable "ecs_ami" {
   description = "AMI ID for ECS optimized instances"
   type        = string
-  default     = "ami-0c7217cdde317cfec" # ECS-optimized AMI for us-east-1
+  default     = "ami-0ca63348a6bc46da3" # ECS-optimized AMI for us-east-1
 }
 
 variable "ecs_cluster_name" {

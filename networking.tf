@@ -23,6 +23,10 @@ resource "aws_subnet" "main_subnet" {
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main_vpc.id
 
+  timeouts {
+    delete = "30m"
+  }
+
   tags = {
     Name = "main-gw"
   }
@@ -46,4 +50,4 @@ resource "aws_route_table" "main_rt" {
 resource "aws_route_table_association" "rt_assoc" {
   subnet_id      = aws_subnet.main_subnet.id
   route_table_id = aws_route_table.main_rt.id
-} 
+}
