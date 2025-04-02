@@ -31,7 +31,7 @@ jobs:
             PORT=80
 
       - name: Upload Docker image as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: next-app-image
           path: /tmp/next-app-image.tar
