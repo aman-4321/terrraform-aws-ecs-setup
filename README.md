@@ -164,7 +164,7 @@ This will remove:
 
 ## Cost Awareness
 
-This deployment uses AWS free tier eligible resources:
+This deployment uses AWS free tier eligible resources::
 
 - t2.micro EC2 instances
 - Basic CloudWatch monitoring
