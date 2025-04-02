@@ -1,6 +1,6 @@
-# AWS ECS Nginx Deployment
+# AWS ECS Next.js Deployment
 
-This project sets up a containerized nginx environment on AWS using Terraform, meeting the requirements for a basic containerized environment using AWS free tier resources.
+This project sets up a containerized Next.js environment on AWS using Terraform, meeting the requirements for a basic containerized environment using AWS free tier resources. It includes CI/CD pipelines using GitHub Actions for automated builds and deployments.
 
 ## Architecture
 
@@ -12,17 +12,24 @@ The infrastructure includes:
 - Auto Scaling Group for the ECS instances
 - CloudWatch monitoring for CPU/memory metrics
 - Security groups, IAM roles, and policies
+- GitHub Actions workflows for CI/CD
 
 ## Prerequisites
 
 - [AWS CLI](https://aws.amazon.com/cli/) configured with appropriate credentials
 - [Terraform](https://www.terraform.io/downloads.html) (v1.0.0 or later)
 - [Docker](https://www.docker.com/get-started) (for building and pushing container images)
+- [GitHub repository](https://github.com) with the source code
+- AWS credentials set as GitHub secrets
 
 ## Project Structure
 
 ```
-├── app/                # Express.js application files (for future enhancement)
+├── .github/workflows/  # GitHub Actions workflow files
+│   ├── build.yml       # Workflow for building the Docker image
+│   └── deploy.yml      # Workflow for deploying to ECR and ECS
+├── next-app/           # Next.js application files
+│   └── Dockerfile      # Dockerfile for the Next.js application
 ├── main.tf             # Provider configuration
 ├── variables.tf        # Variable declarations
 ├── outputs.tf          # Output definitions
@@ -34,7 +41,32 @@ The infrastructure includes:
 └── README.md           # Project documentation
 ```
 
-## Setup Instructions
+## CI/CD Setup
+
+### GitHub Secrets
+
+Add the following secrets to your GitHub repository:
+
+- `AWS_ACCESS_KEY_ID`: Your AWS access key
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+- `AWS_REGION`: The AWS region you're deploying to (e.g., us-east-1)
+
+### Workflows
+
+1. **Build Workflow** (`.github/workflows/build.yml`)
+
+   - Triggers on pushes to the `main` branch that affect the `next-app` directory
+   - Builds the Docker image from the Dockerfile
+   - Stores the image as an artifact
+
+2. **Deploy Workflow** (`.github/workflows/deploy.yml`)
+   - Triggers when the build workflow completes successfully
+   - Configures AWS credentials
+   - Downloads the Docker image artifact
+   - Tags and pushes the image to Amazon ECR
+   - Forces a new deployment on the ECS service
+
+## Terraform Setup
 
 ### 1. Initialize and Apply Terraform
 
@@ -49,52 +81,41 @@ terraform plan
 terraform apply
 ```
 
-### 2. Push Nginx Image to ECR
+### 2. Commit and Push Changes
 
-After the Terraform deployment is complete, you'll see outputs including ECR push commands. Run these commands to push the nginx image to your ECR repository:
+After the Terraform deployment is complete, any changes pushed to the `next-app` directory will trigger the CI/CD pipeline:
 
-```bash
-# Log in to ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <your-account-id>.dkr.ecr.us-east-1.amazonaws.com
-
-# Pull the latest nginx image
-docker pull nginx:latest
-
-# Tag the image
-docker tag nginx:latest <your-account-id>.dkr.ecr.us-east-1.amazonaws.com/nginx-app:latest
-
-# Push the image
-docker push <your-account-id>.dkr.ecr.us-east-1.amazonaws.com/nginx-app:latest
-```
+1. The build workflow will build the Docker image
+2. The deploy workflow will push the image to ECR and update the ECS service
+3. The ECS service will pull the new image and deploy it
 
 ## Verify Deployment
 
-### 1. Check EC2 Instance
+### 1. Check GitHub Actions
+
+1. Go to your GitHub repository
+2. Navigate to the "Actions" tab
+3. Verify that the workflows are running successfully
+
+### 2. Check EC2 Instance
 
 1. Go to the AWS EC2 console
 2. Check that a t2.micro instance is running
 3. It should be in the us-east-1a availability zone
 4. The instance should have the tag "Name: ecs-instance"
 
-### 2. Check ECS Cluster
+### 3. Check ECS Cluster
 
 1. Go to the AWS ECS console
 2. Verify the "nginx-cluster" is active
 3. Check that the "nginx-service" service is running
 4. Verify tasks are in the RUNNING state
 
-### 3. Verify Nginx Service
+### 4. Verify Next.js Service
 
 1. Find the public IP of your EC2 instance in the EC2 console
 2. Open a browser and navigate to http://<EC2-PUBLIC-IP>
-3. You should see the nginx welcome page
-
-### 4. Check CloudWatch Monitoring
-
-1. Go to the CloudWatch console
-2. Navigate to Dashboards and select "ecs-nginx-dashboard"
-3. Verify that CPU and memory metrics are being collected
-4. Check the alarms section to see the CPU and memory alarms
+3. You should see your Next.js application
 
 ## Auto-Scaling Configuration
 
@@ -104,13 +125,24 @@ This deployment includes auto-scaling based on CPU utilization:
 - Scale down when CPU is below 20% for 3 consecutive periods of 120 seconds
 - The Auto Scaling Group has a minimum size of 1 and a maximum size of 2
 
-## Future Enhancements
+## Manual Deployment (if needed)
 
-The `app` directory contains a custom Express.js application that could be used in the future to:
+If you need to manually push an image to ECR:
 
-- Replace the default nginx with a custom application
-- Add a CPU-intensive endpoint for better testing of auto-scaling
-- Implement health checks and custom routing
+```bash
+# Log in to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <your-account-id>.dkr.ecr.us-east-1.amazonaws.com
+
+# Build the Next.js application image
+cd next-app
+docker build -t next-app:latest .
+
+# Tag the image
+docker tag next-app:latest <your-account-id>.dkr.ecr.us-east-1.amazonaws.com/nginx-app:latest
+
+# Push the image
+docker push <your-account-id>.dkr.ecr.us-east-1.amazonaws.com/nginx-app:latest
+```
 
 ## Cleanup Instructions
 

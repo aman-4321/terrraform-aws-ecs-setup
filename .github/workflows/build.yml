@@ -1,0 +1,37 @@
+name: Build Next.js Docker Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "next-app/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./next-app
+          file: ./next-app/Dockerfile
+          push: false
+          tags: next-app:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/next-app-image.tar
+          build-args: |
+            PORT=80
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: next-app-image
+          path: /tmp/next-app-image.tar
